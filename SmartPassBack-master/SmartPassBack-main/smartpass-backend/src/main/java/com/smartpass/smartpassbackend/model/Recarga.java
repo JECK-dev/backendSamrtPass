@@ -3,6 +3,7 @@ package com.smartpass.smartpassbackend.model;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "pro_recargas")
@@ -26,7 +27,7 @@ public class Recarga {
     private BigDecimal monto;
 
     @Column(name = "fecha_recarga")
-    private Long fechaRecarga; // UNIX timestamp
+    private LocalDateTime fechaRecarga; // UNIX timestamp
 
     @Column(name = "estado")
     private Integer estado;
@@ -59,10 +60,10 @@ public class Recarga {
     public void setMonto(BigDecimal monto) {
         this.monto = monto;
     }
-    public Long getFechaRecarga() {
+    public LocalDateTime getFechaRecarga() {
         return fechaRecarga;
     }
-    public void setFechaRecarga(Long fechaRecarga) {
+    public void setFechaRecarga(LocalDateTime fechaRecarga) {
         this.fechaRecarga = fechaRecarga;
     }
     public Integer getEstado() {

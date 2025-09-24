@@ -46,10 +46,13 @@ public class RecargaService {
         Contrato contrato = contratoRepo.findById(idContrato)
                 .orElseThrow(() -> new RuntimeException("Contrato no encontrado"));
 
-        BigDecimal saldoAnterior = contrato.getSaldo();
+        // 2. Obtener el saldo anterior desde pro_transacciones_saldo (última transacción)
+        BigDecimal saldoAnterior = transaccionRepo.findUltimoSaldo(idContrato)
+                .orElse(BigDecimal.ZERO);
+
         BigDecimal nuevoSaldo = saldoAnterior.add(monto);
 
-        // 2. Crear datos de la transacción para blockchain
+        // 3. Crear datos de la transacción para blockchain
         String datos = "RECARGA|Contrato:" + idContrato + "|Monto:" + monto + "|Fecha:" + LocalDateTime.now();
         String hashAnterior = blockchainRepo.findTopByOrderByIdBloqueDesc()
                 .map(BlockchainRecarga::getHashBloque)
@@ -57,7 +60,7 @@ public class RecargaService {
 
         String hashActual = generarHash(hashAnterior + datos);
 
-        // 3. Insertar en pro_blockchain_recargas
+        // 4. Insertar en pro_blockchain_recargas
         BlockchainRecarga bloque = new BlockchainRecarga();
         bloque.setHashBloque(hashActual);
         bloque.setHashAnterior(hashAnterior);
@@ -65,18 +68,18 @@ public class RecargaService {
         bloque.setFechaTransaccion(Timestamp.from(Instant.now()));
         blockchainRepo.save(bloque);
 
-        // 4. Insertar en pro_recargas usando el hash generado
+        // 5. Insertar en pro_recargas usando el hash generado
         Recarga recarga = new Recarga();
         recarga.setIdContrato(idContrato);
         recarga.setMonto(monto);
         recarga.setMetodoPago(monto); // mismo monto
         recarga.setMedioPago(medioPago);
-        recarga.setFechaRecarga(System.currentTimeMillis() / 1000); // UNIX timestamp
+        recarga.setFechaRecarga(LocalDateTime.now());
         recarga.setEstado(1);
         recarga.setHashBlockchain(hashActual);
         recarga = recargaRepo.save(recarga);
 
-        // 5. Insertar en pro_transacciones_saldo
+        // 6. Insertar en pro_transacciones_saldo
         TransaccionSaldo tx = new TransaccionSaldo();
         tx.setIdContrato(idContrato);
         tx.setTipoTransaccion("RECARGA");
@@ -88,12 +91,13 @@ public class RecargaService {
         tx.setDescripcion(descripcion);
         transaccionRepo.save(tx);
 
-        // 6. Actualizar saldo en pro_contrato
+        // 7. Actualizar saldo en pro_contrato (mantener sincronizado)
         contrato.setSaldo(nuevoSaldo);
         contratoRepo.save(contrato);
 
         return "Recarga realizada con éxito. Hash: " + hashActual;
     }
+
 
     private String generarHash(String input) {
         try {

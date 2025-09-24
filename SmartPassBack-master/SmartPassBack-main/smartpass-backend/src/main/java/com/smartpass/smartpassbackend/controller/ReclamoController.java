@@ -35,4 +35,15 @@ public class ReclamoController {
     public List<Vehiculo> listarVehiculosPorClienteReclamo(@PathVariable Long idCliente) {
         return vehiculoRepository.findByCliente_IdCliente(idCliente);
     }
+
+    @GetMapping("/resolucion-reclamo")
+    public List<Reclamo> listarTodos() {
+        return reclamoService.listarTodos();
+    }
+
+    @PutMapping("/{idReclamo}")
+    public Reclamo actualizar(@PathVariable Integer idReclamo, @RequestBody Reclamo reclamo) {
+        return reclamoService.actualizar(idReclamo, reclamo);
+    }
+
 }

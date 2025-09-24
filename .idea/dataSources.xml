@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="SmartPass@localhost" uuid="ad0d2129-c304-4ee9-9670-73ec45fb58ba">
+    <data-source source="LOCAL" name="SmartPass@localhost" uuid="13cf8a44-c870-40b1-9d3a-83f47cd6a88c">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>

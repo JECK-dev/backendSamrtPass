@@ -19,4 +19,14 @@ public interface TransaccionSaldoRepository extends JpaRepository<TransaccionSal
     @Query("SELECT SUM(t.monto) FROM TransaccionSaldo t WHERE t.tipoTransaccion = :tipo AND t.idContrato = :idContrato")
     Optional<BigDecimal> sumByIdContrato(@Param("tipo") String tipo, @Param("idContrato") Integer idContrato);
 
+
+    @Query("""
+    SELECT s.saldoFinal 
+    FROM TransaccionSaldo s
+    WHERE s.idContrato = :idContrato
+    ORDER BY s.idTransaccion DESC
+    LIMIT 1
+    """)
+    Optional<BigDecimal> findUltimoSaldo(@Param("idContrato") Integer idContrato);
+
 }
