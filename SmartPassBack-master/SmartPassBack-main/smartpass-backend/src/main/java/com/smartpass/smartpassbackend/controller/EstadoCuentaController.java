@@ -1,9 +1,14 @@
 package com.smartpass.smartpassbackend.controller;
 
 
+import com.smartpass.smartpassbackend.model.EstadoCuentaPospago;
+import com.smartpass.smartpassbackend.model.EstadoCuentaPrepago;
+import com.smartpass.smartpassbackend.model.TransaccionSaldo;
 import com.smartpass.smartpassbackend.service.EstadoCuentaService;
+import com.smartpass.smartpassbackend.service.TransaccionSaldoService;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
@@ -15,48 +20,51 @@ public class EstadoCuentaController {
 
     private final EstadoCuentaService service;
 
-    // Inyección por constructor (sin Lombok)
+    private  TransaccionSaldoService transaccionSaldoService;
+
     public EstadoCuentaController(EstadoCuentaService service) {
         this.service = service;
     }
 
-    @GetMapping("/contratos")
-    public List<Map<String, Object>> contratos(@RequestParam Integer clienteId) {
-        return service.listarContratos(clienteId);
+    // Ejecutar manualmente los SP (si se quiere desde Postman)
+    @PostMapping("/generar/prepago")
+    public void generarPrepago(@RequestParam String fecha) {
+        service.generarEstadosPrepago(LocalDate.parse(fecha));
     }
 
-    @GetMapping("/estados-cuenta")
-    public Map<String, Object> estadoCuenta(
-            @RequestParam Integer contratoId,
-            @RequestParam String periodo,                 // "YYYY-MM"
-            @RequestParam(required = false) String buscar,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "100") int size
-    ) {
-        return service.obtenerEstadoCuenta(
-                contratoId,
-                YearMonth.parse(periodo),
-                buscar,
-                page,
-                size
-        );
-    }
-/*
-    @GetMapping(value="/estados-cuenta/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
-    public ResponseEntity<byte[]> descargarPdf(@PathVariable String id) {
-        byte[] pdfBytes = service.generarPdf(id); // genera el PDF
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=estado_cuenta_" + id + ".pdf")
-                .body(pdfBytes);
+    @PostMapping("/generar/pospago")
+    public void generarPospago(@RequestParam String fecha) {
+        service.generarEstadosPospago(LocalDate.parse(fecha));
     }
 
-    @GetMapping(value="/estados-cuenta/{id}/excel",
-            produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    public ResponseEntity<byte[]> descargarExcel(@PathVariable String id) {
-        byte[] xlsxBytes = service.generarExcel(id); // genera el Excel
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=estado_cuenta_" + id + ".xlsx")
-                .body(xlsxBytes);
+    // Consultar estados de cuenta
+    @GetMapping("/prepago/{idContrato}")
+    public List<EstadoCuentaPrepago> getPrepago(
+            @PathVariable Integer idContrato,
+            @RequestParam String periodo) {
+        return service.getEstadoCuentaPrepago(idContrato, periodo);
     }
-*/
+
+    @GetMapping("/pospago/{idContrato}")
+    public List<EstadoCuentaPospago> getPospago(
+            @PathVariable Integer idContrato,
+            @RequestParam String periodo) {
+        return service.getEstadoCuentaPospago(idContrato, periodo);
+    }
+
+    @GetMapping("/movimientos/contrato/{idContrato}")
+    public List<TransaccionSaldo> getMovimientosPorContrato(
+            @PathVariable Integer idContrato,
+            @RequestParam String periodo) {
+        return transaccionSaldoService.getMovimientosPorContrato(idContrato, periodo);
+    }
+
+    // Movimientos por cliente + contrato + periodo
+    @GetMapping("/movimientos/cliente/{idCliente}/contrato/{idContrato}")
+    public List<TransaccionSaldo> getMovimientosPorClienteContrato(
+            @PathVariable Integer idCliente,
+            @PathVariable Integer idContrato,
+            @RequestParam String periodo) {
+        return transaccionSaldoService.getMovimientosPorClienteContrato(idCliente, idContrato, periodo);
+    }
 }

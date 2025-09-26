@@ -29,4 +29,10 @@ public interface ContratoRepository extends JpaRepository<Contrato, Integer> {
         ORDER BY nro_contrato
         """, nativeQuery = true)
     List<ContratoResumen> listarPorClienteActivo(@Param("clienteId") Integer clienteId);
+
+    @Query("SELECT c FROM Contrato c WHERE c.tipoContrato = :tipo AND c.idCliente = :idCliente")
+    List<Contrato> findByTipoAndCliente(String tipo, Integer idCliente);
+
+    @Query("SELECT c FROM Contrato c WHERE c.tipoContrato = :tipo")
+    List<Contrato> findByTipo(String tipo);
 }

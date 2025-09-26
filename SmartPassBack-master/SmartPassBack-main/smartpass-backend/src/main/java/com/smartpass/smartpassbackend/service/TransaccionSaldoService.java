@@ -16,4 +16,12 @@ public class TransaccionSaldoService {
     public List<TransaccionSaldo> obtenerTransaccionesPorContrato(Integer idContrato) {
         return transaccionRepo.obtenerPorContrato(idContrato);
     }
+
+    public List<TransaccionSaldo> getMovimientosPorContrato(Integer idContrato, String periodo) {
+        return transaccionRepo.findByContratoAndPeriodo(idContrato, periodo);
+    }
+
+    public List<TransaccionSaldo> getMovimientosPorClienteContrato(Integer idCliente, Integer idContrato, String periodo) {
+        return transaccionRepo.findByClienteContratoPeriodo(idCliente, idContrato, periodo);
+    }
 }

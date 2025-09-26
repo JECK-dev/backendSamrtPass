@@ -29,4 +29,18 @@ public interface TransaccionSaldoRepository extends JpaRepository<TransaccionSal
     """)
     Optional<BigDecimal> findUltimoSaldo(@Param("idContrato") Integer idContrato);
 
+
+    @Query(value = "SELECT * FROM pro_transacciones_saldo " +
+            "WHERE id_contrato = :idContrato " +
+            "AND to_char(fecha, 'YYYY-MM') = :periodo " +
+            "ORDER BY fecha ASC", nativeQuery = true)
+    List<TransaccionSaldo> findByContratoAndPeriodo(Integer idContrato, String periodo);
+
+    @Query(value = "SELECT * FROM pro_transacciones_saldo " +
+            "WHERE id_contrato = :idContrato " +
+            "AND id_cliente = :idCliente " +
+            "AND to_char(fecha, 'YYYY-MM') = :periodo " +
+            "ORDER BY fecha ASC", nativeQuery = true)
+    List<TransaccionSaldo> findByClienteContratoPeriodo(Integer idCliente, Integer idContrato, String periodo);
+
 }

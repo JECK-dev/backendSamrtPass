@@ -62,4 +62,16 @@ public class ContratoController {
     public ResponseEntity<List<ContratoInfo>> listarContratosPrepagoPorCliente(@PathVariable Integer idCliente) {
         return ResponseEntity.ok(contratoService.obtenerContratosPrepagoPorCliente(idCliente));
     }
+
+    @GetMapping("/tipo/{tipo}")
+    public List<Contrato> getContratosPorTipo(@PathVariable String tipo) {
+        return contratoService.getContratosPorTipo(tipo);
+    }
+
+    @GetMapping("/tipo/{tipo}/cliente/{idCliente}")
+    public List<Contrato> getContratosPorTipoYCliente(
+            @PathVariable String tipo,
+            @PathVariable Integer idCliente) {
+        return contratoService.getContratosPorTipoYCliente(tipo, idCliente);
+    }
 }

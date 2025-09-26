@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/vehiculos")
@@ -57,4 +58,34 @@ public class VehiculoController {
     public ResponseEntity<Vehiculo> actualizar(@PathVariable Integer id, @RequestBody Vehiculo vehiculo) {
         return ResponseEntity.ok(vehiculoService.actualizar(id, vehiculo));
     }
+
+    public VehiculoController(VehiculoService vehiculoService) {
+        this.vehiculoService = vehiculoService;
+    }
+
+    @PostMapping("/upload-json")
+    public ResponseEntity<Map<String, String>> uploadVehiculos(@RequestBody List<Vehiculo> vehiculos) {
+        for (Vehiculo v : vehiculos) {
+            String result = vehiculoService.insertarVehiculo(
+                    v.getPlaca(),
+                    v.getIdContrato(),
+                    v.getCategoria(),
+                    v.getModelo(),
+                    v.getColor(),
+                    v.getMarca(),
+                    v.getIdCliente()
+            );
+
+            if (!"OK".equals(result)) {
+                return ResponseEntity.badRequest().body(
+                        Map.of("status", "error", "message", result)
+                );
+            }
+        }
+
+        return ResponseEntity.ok(
+                Map.of("status", "success", "message", "Vehículos insertados correctamente 🚗✅")
+        );
+    }
+
 }

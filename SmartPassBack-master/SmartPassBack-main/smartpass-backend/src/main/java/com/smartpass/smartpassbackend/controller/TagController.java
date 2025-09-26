@@ -5,8 +5,12 @@ import com.smartpass.smartpassbackend.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -78,4 +82,35 @@ public class    TagController {
         tagService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
+
+
+    @PostMapping("/upload-test")
+    public ResponseEntity<Map<String, Object>> uploadTest(@RequestParam("file") MultipartFile file) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("fileName", file.getOriginalFilename());
+        response.put("size", file.getSize());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/upload-json")
+    public ResponseEntity<Map<String, Object>> uploadTagsJson(@RequestBody List<Tag> tags) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<Tag> saved = tagService.cargarTagsDesdeJsonBatch(tags);
+
+            response.put("status", "success");
+            response.put("message", "Archivo procesado correctamente");
+            response.put("totalRegistros", saved.size());
+            response.put("data", saved);
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            response.put("status", "error");
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+
+
 }

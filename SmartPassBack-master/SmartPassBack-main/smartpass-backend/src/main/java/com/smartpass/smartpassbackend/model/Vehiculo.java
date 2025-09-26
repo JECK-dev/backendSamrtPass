@@ -44,6 +44,10 @@ public class Vehiculo {
     @JoinColumn(name = "id_cliente")
     private Cliente cliente;
 
+    // Campo auxiliar para carga masiva (JSON plano)
+    @Transient
+    private Long idCliente;
+
 
     public Integer getIdVehiculo() {
         return idVehiculo;
@@ -111,5 +115,12 @@ public class Vehiculo {
     }
     public void setCliente(Cliente cliente) {
         this.cliente = cliente;
+    }
+
+    public Long getIdCliente() {
+        return idCliente;
+    }
+    public void setIdCliente(Long idCliente) {
+        this.idCliente = idCliente;
     }
 }

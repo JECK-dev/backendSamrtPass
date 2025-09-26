@@ -1,71 +1,62 @@
 package com.smartpass.smartpassbackend.service;
 
-import com.smartpass.smartpassbackend.repository.ContratoRepository;
-import com.smartpass.smartpassbackend.repository.EstadoCuentaDao;
+
+import com.smartpass.smartpassbackend.model.EstadoCuentaPospago;
+import com.smartpass.smartpassbackend.model.EstadoCuentaPrepago;
+import com.smartpass.smartpassbackend.repository.EstadoCuentaPospagoRepository;
+import com.smartpass.smartpassbackend.repository.EstadoCuentaPrepagoRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class EstadoCuentaService {
 
-    private final EstadoCuentaDao dao;              // <-- usamos DAO
-    private final ContratoRepository contratoRepo;  // este sí puede seguir como Spring Data JPA
+    private final EstadoCuentaPrepagoRepository prepagoRepo;
+    private final EstadoCuentaPospagoRepository pospagoRepo;
 
-    public EstadoCuentaService(EstadoCuentaDao dao, ContratoRepository contratoRepo) {
-        this.dao = dao;
-        this.contratoRepo = contratoRepo;
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public EstadoCuentaService(EstadoCuentaPrepagoRepository prepagoRepo, EstadoCuentaPospagoRepository pospagoRepo) {
+        this.prepagoRepo = prepagoRepo;
+        this.pospagoRepo = pospagoRepo;
     }
 
-    public List<Map<String, Object>> listarContratos(Integer clienteId) {
-        var rows = contratoRepo.listarPorClienteActivo(clienteId);
-        List<Map<String, Object>> out = new ArrayList<>();
-        for (var r : rows) {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("id", r.getIdContrato());
-            m.put("codigo", r.getnroContrato());
-            out.add(m);
-        }
-        return out;
+    // Ejecutar SP manualmente
+    @Transactional
+    public void generarEstadosPrepago(LocalDate fechaRef) {
+        entityManager.createNativeQuery("CALL sp_generar_estado_cuenta_prepago(:fecha)")
+                .setParameter("fecha", fechaRef)
+                .executeUpdate();
     }
 
-    public Map<String, Object> obtenerEstadoCuenta(Integer contratoId,
-                                                   YearMonth periodo,
-                                                   String buscar,
-                                                   int page,
-                                                   int size) {
-        LocalDate inicio = periodo.atDay(1);
-        LocalDate fin = inicio.plusMonths(1);
-        int limit  = Math.max(1, size);
-        int offset = Math.max(0, page) * limit;
+    @Transactional
+    public void generarEstadosPospago(LocalDate fechaRef) {
+        entityManager.createNativeQuery("CALL sp_generar_estado_cuenta_pospago(:fecha)")
+                .setParameter("fecha", fechaRef)
+                .executeUpdate();
+    }
 
-        BigDecimal saldoInicial = dao.saldoInicial(contratoId, inicio);
+    // Programar ejecución automática el primer día del mes a las 02:00 AM
+    @Scheduled(cron = "0 0 2 1 * ?")
+    public void generarMensual() {
+        LocalDate fechaRef = LocalDate.now().withDayOfMonth(1);
+        generarEstadosPrepago(fechaRef);
+        generarEstadosPospago(fechaRef);
+    }
 
-        var movs = dao.movimientos(
-                contratoId, inicio, fin,
-                (buscar == null || buscar.isBlank()) ? null : buscar,
-                offset, limit
-        );
+    // Consultas
+    public List<EstadoCuentaPrepago> getEstadoCuentaPrepago(Integer idContrato, String periodo) {
+        return prepagoRepo.findByIdContratoAndPeriodo(idContrato, periodo);
+    }
 
-        var tot = dao.totales(contratoId, inicio, fin);
-        BigDecimal cargos = (BigDecimal) tot.get("cargos");
-        BigDecimal abonos = (BigDecimal) tot.get("abonos");
-        BigDecimal saldoFinal = saldoInicial.add(abonos).subtract(cargos);
-
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("contratoId", contratoId);
-        body.put("periodo", periodo.toString());
-        body.put("saldoInicial", saldoInicial);
-        body.put("cargos", cargos);
-        body.put("abonos", abonos);
-        body.put("saldoFinal", saldoFinal);
-        body.put("movimientos", movs);
-        return body;
+    public List<EstadoCuentaPospago> getEstadoCuentaPospago(Integer idContrato, String periodo) {
+        return pospagoRepo.findByIdContratoAndPeriodo(idContrato, periodo);
     }
 }

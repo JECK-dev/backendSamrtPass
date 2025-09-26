@@ -38,4 +38,12 @@ public class ContratoService {
     public List<ContratoInfo> obtenerContratosPrepagoPorCliente(Integer idCliente) {
         return contratoRepository.obtenerContratosPrepagoPorCliente(idCliente);
     }
+
+    public List<Contrato> getContratosPorTipo(String tipo) {
+        return contratoRepository.findByTipo(tipo);
+    }
+
+    public List<Contrato> getContratosPorTipoYCliente(String tipo, Integer idCliente) {
+        return contratoRepository.findByTipoAndCliente(tipo, idCliente);
+    }
 }
