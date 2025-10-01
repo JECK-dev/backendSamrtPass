@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -31,7 +33,7 @@ public class ContratoController {
 
     @PostMapping
     public ResponseEntity<Contrato> crear(@RequestBody Contrato contrato) {
-        Contrato nuevo = contratoService.guardarContrato(contrato);
+        Contrato nuevo = contratoService.crearContrato(contrato);
         return ResponseEntity.ok(nuevo);
     }
 
@@ -73,5 +75,12 @@ public class ContratoController {
             @PathVariable String tipo,
             @PathVariable Integer idCliente) {
         return contratoService.getContratosPorTipoYCliente(tipo, idCliente);
+    }
+
+    @PutMapping("/{id}/baja")
+    public ResponseEntity<Contrato> darBaja(@PathVariable Integer id) {
+        Contrato contrato = contratoService.darDeBaja(id);
+        return ResponseEntity.ok(contrato);
+
     }
 }

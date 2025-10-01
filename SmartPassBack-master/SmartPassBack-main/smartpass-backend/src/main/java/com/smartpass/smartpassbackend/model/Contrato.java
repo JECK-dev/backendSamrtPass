@@ -14,13 +14,11 @@ public class Contrato {
     @Column(name = "id_contrato")
     private Integer idContrato;
 
-
-    @Column(name = "id_cliente", insertable = false, updatable = false)
+    @Column(name = "id_cliente", nullable = false)
     private Integer idCliente;
 
     @Column(name = "nro_contrato", insertable = false, updatable = false)
     private Long nroContrato;
-
 
     @Column(name = "saldo", nullable = false)
     private BigDecimal saldo;
@@ -37,12 +35,16 @@ public class Contrato {
     @Column(name = "id_estado", nullable = false)
     private Integer idEstado;
 
-    @ManyToOne
-    @JoinColumn(name = "id_cliente")
-    private Cliente cliente;
+    @Column(name = "id_tipo_facturacion", nullable = false)
+    private Integer idTipoFactura;
 
     @ManyToOne
-    @JoinColumn(name = "id_tipo_facturacion")
+    @JoinColumn(name = "id_cliente", referencedColumnName = "id_cliente", insertable = false, updatable = false)
+    private Cliente cliente;
+
+
+    @ManyToOne
+    @JoinColumn(name = "id_tipo_facturacion", insertable = false, updatable = false)
     private TipoFacturacion tipoFacturacion;
 
     // Getters y Setters
@@ -123,6 +125,13 @@ public class Contrato {
 
     public void setTipoFacturacion(TipoFacturacion tipoFacturacion) {
         this.tipoFacturacion = tipoFacturacion;
+    }
+
+    public Integer getIdTipoFactura() {
+        return idTipoFactura;
+    }
+    public void setIdTipoFactura(Integer idTipoFactura) {
+        this.idTipoFactura = idTipoFactura;
     }
 }
 

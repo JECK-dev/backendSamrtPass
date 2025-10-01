@@ -1,9 +1,9 @@
 package com.smartpass.smartpassbackend.controller;
 
 
-import com.smartpass.smartpassbackend.model.EstadoCuentaPospago;
-import com.smartpass.smartpassbackend.model.EstadoCuentaPrepago;
-import com.smartpass.smartpassbackend.model.TransaccionSaldo;
+import com.smartpass.smartpassbackend.model.*;
+import com.smartpass.smartpassbackend.repository.EstadoCuentaPospagoRepository;
+import com.smartpass.smartpassbackend.repository.EstadoCuentaPrepagoRepository;
 import com.smartpass.smartpassbackend.service.EstadoCuentaService;
 import com.smartpass.smartpassbackend.service.TransaccionSaldoService;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/estado-cuenta")
@@ -37,19 +38,44 @@ public class EstadoCuentaController {
         service.generarEstadosPospago(LocalDate.parse(fecha));
     }
 
-    // Consultar estados de cuenta
-    @GetMapping("/prepago/{idContrato}")
-    public List<EstadoCuentaPrepago> getPrepago(
+    // ============================
+    // PREPAGO
+    // ============================
+
+    // Resumen de cuenta (saldo inicial, cargos, abonos, saldo final)
+    @GetMapping("/prepago/resumen/{idContrato}")
+    public EstadoCuentaPrepago getPrepagoResumen(
             @PathVariable Integer idContrato,
             @RequestParam String periodo) {
-        return service.getEstadoCuentaPrepago(idContrato, periodo);
+        return service.getPrepagoResumen(idContrato, periodo);
     }
 
-    @GetMapping("/pospago/{idContrato}")
-    public List<EstadoCuentaPospago> getPospago(
+    // Movimientos de cuenta (lista de transacciones)
+    @GetMapping("/prepago/{idContrato}")
+    public List<EstadoCuentaPrepagoDetalle> getPrepagoMovimientos(
             @PathVariable Integer idContrato,
             @RequestParam String periodo) {
-        return service.getEstadoCuentaPospago(idContrato, periodo);
+        return service.getPrepagoMovimientos(idContrato, periodo);
+    }
+
+    // ============================
+    // POSPAGO
+    // ============================
+
+    // Resumen de cuenta (monto facturado, pagado, pendiente)
+    @GetMapping("/pospago/resumen/{idContrato}")
+    public EstadoCuentaPospago getPospagoResumen(
+            @PathVariable Integer idContrato,
+            @RequestParam String periodo) {
+        return service.getPospagoResumen(idContrato, periodo);
+    }
+
+    // Detalles de cuenta (facturas/pagos)
+    @GetMapping("/pospago/{idContrato}")
+    public List<EstadoCuentaPospagoDetalle> getPospagoDetalles(
+            @PathVariable Integer idContrato,
+            @RequestParam String periodo) {
+        return service.getPospagoMovimientos(idContrato, periodo);
     }
 
     @GetMapping("/movimientos/contrato/{idContrato}")
