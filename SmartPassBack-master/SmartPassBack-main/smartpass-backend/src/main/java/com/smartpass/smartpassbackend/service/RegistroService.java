@@ -5,7 +5,9 @@ import com.smartpass.smartpassbackend.model.Usuario;
 import com.smartpass.smartpassbackend.repository.ClienteRepository;
 import com.smartpass.smartpassbackend.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -33,15 +35,16 @@ public class RegistroService {
             clienteGuardado = clienteRepository.save(cliente);
         }
 
-        // Verifica si ya existe un usuario con ese cliente (opcional)
-        if (usuarioRepository.findByUsuario(usuario.getUsuario()) == null) {
+        // ✅ Verificar si existe el usuario por correo
+        if (!usuarioRepository.existsByUsuario(usuario.getUsuario())) {
             usuario.setIdCliente(clienteGuardado.getIdCliente());
             usuario.setIdRol(2);
             usuarioRepository.save(usuario);
         } else {
-            throw new RuntimeException("Ya existe un usuario con ese correo.");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un usuario con ese correo.");
         }
     }
+
 
     public void registrarEmpresa(Cliente cliente, Usuario usuario) {
         try {

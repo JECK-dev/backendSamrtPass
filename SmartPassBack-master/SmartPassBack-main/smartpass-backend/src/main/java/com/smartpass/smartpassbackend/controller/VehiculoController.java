@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -46,12 +47,24 @@ public class VehiculoController {
     }
 
 
-
-
-
     @PostMapping
-    public Vehiculo crear(@RequestBody Vehiculo vehiculo) {
-        return vehiculoService.guardar(vehiculo);
+    public ResponseEntity<Map<String, Object>> registrarVehiculo(@RequestBody Vehiculo vehiculo) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            vehiculoService.registrarVehiculo(vehiculo);
+            response.put("mensaje", "Vehículo registrado correctamente con TAG asignado");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            String errorMsg = e.getMessage();
+            if (errorMsg != null && errorMsg.contains("PLACA_DUPLICADA")) {
+                response.put("error", "Placa Registrada!!");
+            } else if (errorMsg != null && errorMsg.contains("SIN_TAGS")) {
+                response.put("error", "No hay TAGs disponibles");
+            } else {
+                response.put("error", "Error al registrar vehículo");
+            }
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     @PutMapping("/{id}")

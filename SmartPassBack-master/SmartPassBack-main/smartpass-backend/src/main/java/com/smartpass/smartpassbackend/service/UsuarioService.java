@@ -1,9 +1,11 @@
 package com.smartpass.smartpassbackend.service;
 
-
 import com.smartpass.smartpassbackend.model.Usuario;
+import com.smartpass.smartpassbackend.repository.ClienteRepository;
 import com.smartpass.smartpassbackend.repository.UsuarioRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -11,9 +13,12 @@ import java.util.List;
 public class UsuarioService {
 
     private final UsuarioRepository repo;
+    private final ClienteRepository clienteRepo;
 
-    public UsuarioService(UsuarioRepository repo) {
+    // ✅ Inyectamos ambos repositorios
+    public UsuarioService(UsuarioRepository repo, ClienteRepository clienteRepo) {
         this.repo = repo;
+        this.clienteRepo = clienteRepo;
     }
 
     public List<Usuario> listar() {
@@ -22,26 +27,36 @@ public class UsuarioService {
 
     public Usuario buscarPorId(Long id) {
         return repo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
     }
 
     public Usuario crear(Usuario usuario) {
         if (usuario.getUsuario() == null || usuario.getUsuario().isBlank()) {
-            throw new IllegalArgumentException("El campo 'usuario' es obligatorio.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El campo 'usuario' es obligatorio.");
         }
-        if (repo.existsByUsuario(usuario.getUsuario())) {
-            throw new IllegalArgumentException("El usuario ya existe.");
+
+        String correo = usuario.getUsuario().trim(); // ✅ Solo quita espacios, mantiene mayúsculas/minúsculas
+        usuario.setUsuario(correo);
+
+        // Validar correo exacto en pro_usuario y pro_cliente
+        if (repo.existsByUsuario(correo) || clienteRepo.existsByCorreo(correo)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un registro con ese correo.");
         }
-        if (usuario.getPassword() == null || usuario.getPassword().isBlank()) {
-            throw new IllegalArgumentException("La contraseña es obligatoria.");
+
+        // Validar documento exacto en pro_usuario y pro_cliente
+        String dni = usuario.getDni().trim();
+        if (repo.existsByDni(dni) || clienteRepo.existsByNumDocumento(dni)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un registro con ese número de documento.");
         }
-        // SIN hashing (solo DEV)
+
         return repo.save(usuario);
     }
 
+
+
     public Usuario actualizar(Long id, Usuario usuario) {
         Usuario existente = repo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
         existente.setNombre(usuario.getNombre());
         existente.setApellido(usuario.getApellido());
@@ -50,28 +65,30 @@ public class UsuarioService {
         existente.setUsuario(usuario.getUsuario());
         existente.setIdCliente(usuario.getIdCliente());
         existente.setIdRol(usuario.getIdRol());
-        // No tocamos password aquí
+        // ⚠️ No tocamos password aquí
         return repo.save(existente);
     }
 
     public void eliminar(Long id) {
-        if (!repo.existsById(id)) throw new IllegalArgumentException("Usuario no encontrado");
+        if (!repo.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
+        }
         repo.deleteById(id);
     }
 
-    /** Cambio de contraseña simple (texto plano) */
+    /** Cambio de contraseña simple (texto plano - solo DEV) */
     public void cambiarPassword(Long idUsuario, String actual, String nueva, String confirmar) {
         if (nueva == null || nueva.isBlank())
-            throw new IllegalArgumentException("La nueva contraseña es obligatoria.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La nueva contraseña es obligatoria.");
         if (!nueva.equals(confirmar))
-            throw new IllegalArgumentException("Las contraseñas no coinciden.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las contraseñas no coinciden.");
 
         Usuario u = repo.findById(idUsuario)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
 
         // Validar contraseña actual (texto plano)
         if (u.getPassword() != null && !u.getPassword().equals(actual)) {
-            throw new IllegalArgumentException("La contraseña actual no es correcta.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La contraseña actual no es correcta.");
         }
 
         u.setPassword(nueva);

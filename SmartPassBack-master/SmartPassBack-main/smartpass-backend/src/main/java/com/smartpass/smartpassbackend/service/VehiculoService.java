@@ -4,6 +4,7 @@ import com.smartpass.smartpassbackend.model.Cliente;
 import com.smartpass.smartpassbackend.model.Vehiculo;
 import com.smartpass.smartpassbackend.repository.VehiculoRepository;
 import jakarta.persistence.*;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -46,9 +47,6 @@ public class VehiculoService {
         return vehiculoRepository.findById(id);
     }
 
-    public Vehiculo guardar(Vehiculo vehiculo) {
-        return vehiculoRepository.save(vehiculo);
-    }
 
     public Vehiculo actualizar(Integer id, Vehiculo vehiculo) {
         vehiculo.setIdVehiculo(id);
@@ -85,9 +83,28 @@ public class VehiculoService {
         return "OK";
     }
 
+    @Transactional
+    public void registrarVehiculo(Vehiculo vehiculo) {
+        Long idCliente = vehiculo.getCliente() != null ? vehiculo.getCliente().getIdCliente() : vehiculo.getIdCliente();
 
+        try {
+            entityManager.createNativeQuery(
+                            "CALL sp_insertar_vehiculo_auto_tag(:placa, :idContrato, :idCategoria, :modelo, :color, :marca, :idCliente, :idEstado)"
+                    )
+                    .setParameter("placa", vehiculo.getPlaca())
+                    .setParameter("idContrato", vehiculo.getIdContrato())
+                    .setParameter("idCategoria", vehiculo.getCategoria())
+                    .setParameter("modelo", vehiculo.getModelo())
+                    .setParameter("color", vehiculo.getColor())
+                    .setParameter("marca", vehiculo.getMarca())
+                    .setParameter("idCliente", idCliente)
+                    .setParameter("idEstado", 1)
+                    .executeUpdate();
 
-
-
+        } catch (Exception e) {
+            // Propagar el error al controller para que lo devuelva como JSON
+            throw new RuntimeException(e.getMessage());
+        }
+    }
 
 }
