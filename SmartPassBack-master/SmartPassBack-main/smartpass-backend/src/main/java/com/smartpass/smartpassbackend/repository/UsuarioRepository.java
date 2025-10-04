@@ -15,5 +15,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     boolean existsByDni(String dni);
 
+    // En UsuarioRepository
+    Optional<Usuario> findByDni(String dni);
+
+
 
 }

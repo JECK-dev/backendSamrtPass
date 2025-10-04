@@ -6,6 +6,7 @@ import com.smartpass.smartpassbackend.repository.ClienteRepository;
 import com.smartpass.smartpassbackend.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -21,55 +22,42 @@ public class RegistroService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    public void registrar(Cliente cliente, Usuario usuario) {
-        // Verificar si el cliente ya existe por número de documento
-        Optional<Cliente> clienteExistente = clienteRepository.findByNumDocumento(cliente.getNumDocumento());
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-        Cliente clienteGuardado;
+    public Usuario registrar(Cliente cliente, Usuario usuario) {
+        Cliente clienteGuardado = clienteRepository.findByNumDocumento(cliente.getNumDocumento())
+                .orElseGet(() -> {
+                    cliente.setFechaCreacion(LocalDateTime.now());
+                    cliente.setFechaModificacion(LocalDateTime.now());
+                    return clienteRepository.save(cliente);
+                });
 
-        if (clienteExistente.isPresent()) {
-            clienteGuardado = clienteExistente.get();
-        } else {
-            cliente.setFechaCreacion(LocalDateTime.now());
-            cliente.setFechaModificacion(LocalDateTime.now());
-            clienteGuardado = clienteRepository.save(cliente);
+        if (usuarioRepository.existsByUsuario(usuario.getUsuario())) {
+            throw new RuntimeException("Ya existe un usuario con ese correo");
         }
 
-        // ✅ Verificar si existe el usuario por correo
-        if (!usuarioRepository.existsByUsuario(usuario.getUsuario())) {
-            usuario.setIdCliente(clienteGuardado.getIdCliente());
-            usuario.setIdRol(2);
-            usuarioRepository.save(usuario);
-        } else {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe un usuario con ese correo.");
-        }
+        usuario.setIdCliente(clienteGuardado.getIdCliente());
+        usuario.setIdRol(2);
+        usuario.setPassword(passwordEncoder.encode(usuario.getPassword())); // 🔒 encriptar
+        return usuarioRepository.save(usuario); // devolvemos el usuario creado
     }
 
-
-    public void registrarEmpresa(Cliente cliente, Usuario usuario) {
-        try {
-            // Validar campos requeridos
-            if (cliente.getNumDocumento() == null || cliente.getNumDocumento().isEmpty()) {
-                throw new IllegalArgumentException("El RUC (numDocumento) es obligatorio.");
-            }
-
-            // Establecer fechas
-            LocalDateTime ahora = LocalDateTime.now();
-            cliente.setFechaCreacion(ahora);
-            cliente.setFechaModificacion(ahora);
-
-            // Guardar cliente
-            Cliente clienteGuardado = clienteRepository.save(cliente);
-
-            // Vincular cliente al usuario y asignar rol empresarial
-            usuario.setIdCliente(clienteGuardado.getIdCliente());
-            usuario.setIdRol(2); // 2 = empresa
-            usuarioRepository.save(usuario);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Error al registrar empresa: " + e.getMessage(), e);
+    public Usuario registrarEmpresa(Cliente cliente, Usuario usuario) {
+        if (cliente.getNumDocumento() == null || cliente.getNumDocumento().isEmpty()) {
+            throw new RuntimeException("El RUC es obligatorio.");
         }
+
+        cliente.setFechaCreacion(LocalDateTime.now());
+        cliente.setFechaModificacion(LocalDateTime.now());
+        Cliente clienteGuardado = clienteRepository.save(cliente);
+
+        usuario.setIdCliente(clienteGuardado.getIdCliente());
+        usuario.setIdRol(2);
+        usuario.setPassword(passwordEncoder.encode(usuario.getPassword())); // 🔒 encriptar
+        return usuarioRepository.save(usuario); // devolvemos el usuario creado
     }
+
 
     public Optional<Cliente> obtenerPerfil(Long idCliente) {
         return clienteRepository.findById(idCliente);
