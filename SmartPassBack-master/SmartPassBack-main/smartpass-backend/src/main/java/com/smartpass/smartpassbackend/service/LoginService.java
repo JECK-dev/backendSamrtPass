@@ -21,22 +21,15 @@ public class LoginService {
 
     // 🔹 usa comparación directa por ahora (no passwordEncoder)
     public Usuario login(String usuarioIngresado, String passwordIngresada) {
-        System.out.println("🔍 Buscando usuario con DNI: " + usuarioIngresado);
-
         Usuario usuario = usuarioRepository.findByDni(usuarioIngresado)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        System.out.println("🔎 Usuario DB encontrado -> DNI: " + usuario.getDni());
-        System.out.println("🔎 Usuario DB password guardado (hash) -> " + usuario.getPassword());
-        System.out.println("🔑 Password ingresado -> " + passwordIngresada);
+        // Comparar correctamente usando BCrypt
 
-        // ✅ Comparar correctamente usando BCrypt
         if (!passwordEncoder.matches(passwordIngresada, usuario.getPassword())) {
-            System.out.println("⚠️ Contraseña no coincide");
+            System.out.println("Contraseña no coincide");
             throw new RuntimeException("Credenciales inválidas");
         }
-
-        System.out.println("✅ Login correcto para usuario ID: " + usuario.getIdUsuario());
         return usuario;
     }
 }

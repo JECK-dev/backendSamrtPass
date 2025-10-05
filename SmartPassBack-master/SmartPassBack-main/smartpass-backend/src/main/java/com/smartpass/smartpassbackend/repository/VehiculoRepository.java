@@ -17,4 +17,7 @@ public interface VehiculoRepository extends JpaRepository<Vehiculo, Long> {
 
     Optional<Vehiculo> findById(Long id);
 
+    @Query("SELECT v FROM Vehiculo v WHERE v.idContrato = :idContrato")
+    List<Vehiculo> findByContratoId(@Param("idContrato") Integer idContrato);
+
 }
